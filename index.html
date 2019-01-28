@@ -60,8 +60,8 @@
 	<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.36/dist/web3.min.js" integrity="sha256-nWBTbvxhJgjslRyuAKJHK+XcZPlCnmIAAMixz6EefVk=" crossorigin="anonymous"></script>
 
 	<script type="text/javascript">
-		//var Buffer = require('buffer/').Buffer;
-		var abi = [{"constant":true,"inputs":[{"name":"_user","type":"address"},{"name":"_key","type":"uint256"}],"name":"getProof","outputs":[{"name":"","type":"string"},{"name":"","type":"bytes32[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_user","type":"address"},{"name":"_ipfsHash","type":"string"},{"name":"_tags","type":"bytes32[]"}],"name":"addProof","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_user","type":"address"}],"name":"getNumProofs","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}];
+		var contractAddr = "0x6e7Bc5E4adEC44332292Be45a38aB978AcF1c3a6";
+		var abi = [{"payable":true,"stateMutability":"payable","type":"fallback"},{"constant":false,"inputs":[{"name":"_ipfsHash","type":"string"},{"name":"_tags","type":"bytes32[]"}],"name":"addProof","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function","signature":"0xd126d661"},{"constant":true,"inputs":[{"name":"_user","type":"address"},{"name":"_key","type":"uint256"}],"name":"getProof","outputs":[{"name":"","type":"string"},{"name":"","type":"bytes32[]"}],"payable":false,"stateMutability":"view","type":"function","signature":"0x4f5b5a52"},{"constant":true,"inputs":[{"name":"_user","type":"address"}],"name":"getNumProofs","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function","signature":"0x9df74d20"}];
 
 		let ipfs, poeContract, account;
 		var buffer;
@@ -94,7 +94,6 @@
 			let tags = document.getElementById("tags").value;
 			console.log(res[0].hash + " " + tags);
 			var tagArr = tags.split(",").map(str => web3.utils.asciiToHex(str.trim()));
-			console.log(tagArr);
 			poeContract.methods.addProof(res[0].hash, tagArr).send({from:account})
 				.then(() => contractInit())
 				.catch((err) => alert(err));
@@ -102,7 +101,7 @@
 		}
 
 		var contractInit = async() => {
-			poeContract = new web3.eth.Contract(abi, "0x98A5bDCE9Fc2F88034F3De1ed21E1D055a16Ee3B");
+			poeContract = new web3.eth.Contract(abi, contractAddr);
 			var numProofs = parseInt(await poeContract.methods.getNumProofs(account).call());
 			if(numProofs > 0) {
 				document.getElementById("userHistory").innerHTML = "";
