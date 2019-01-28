@@ -22,19 +22,22 @@ contract ProofOfExistence {
 		revert();
 	}
 
-	//
+	//function to add a proof by storing ipfshash of proof and tags in contract storage
 	function addProof(string memory _ipfsHash, bytes32[] memory _tags) public {
 		address _user = msg.sender;
-		uint key = userToProofs[_user].numProofs++;
+		userToProofs[_user].numProofs = userToProofs[_user].numProofs.add(1);
+		uint256 key = userToProofs[_user].numProofs;
 		userToProofs[_user].ipfsHashes[key] = _ipfsHash;
 		userToProofs[_user].tags[key] = _tags;
 	}
 	
+	//function to get ipfshash and tags of proof for particular user and key
 	function getProof(address _user, uint256 _key) public view returns(string memory, bytes32[] memory) {
 	    userStorage storage uS = userToProofs[_user];
 	    return (uS.ipfsHashes[_key], uS.tags[_key]);
 	}
 
+	//returns total number of proofs that an address has, useful for displaying user history
 	function getNumProofs(address _user) public view returns(uint256) {
 		return userToProofs[_user].numProofs;
 	}
