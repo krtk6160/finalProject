@@ -1,7 +1,8 @@
 pragma solidity 0.5.0;
-import "./Ownable.sol";
+import "./SafeMath.sol";
 
-contract ProofOfExistence is Ownable {
+contract ProofOfExistence {
+	using SafeMath for uint256;
 
 	struct userStorage {
 		//maps integer key to ipfs Hash of a file
