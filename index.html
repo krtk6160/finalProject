@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style type="text/css">
+		.fileInput {
+			height: 0.1px;
+			width: 0.1px;
+			position: absolute;
+			overflow: hidden;
+		}
+		.fileInput + label {
+			border: 0px;
+			border-style: solid;
+			padding: 12px;
+			border-radius: 6px;
+			background-color: #6200EE;
+			color: #fff;
+			cursor: pointer;
+		}
+		.fileInput:hover + label {
+			background-color: #3700B3;
+		}
+		.btn {
+			border-radius: 6px;
+			padding: 14px;
+			border-width: 0px;
+			background-color: #6200EE;
+			color: #fff;
+			font-size: 16px;
+		}
+
+		.btn:hover {
+			background-color: #3700B3;
+		}
+		.flex-container {
+			display: flex;
+			flex-wrap: wrap;
+			flex-direction: row;
+		}
+
+		#tags {
+			border-style: solid;
+			
+			outline: none;
+			border-radius: 4px;
+			border-width: 2px;
+			border-color: #6200EE;
+			padding: 8px;
+			width: 205px;
+		}
+
+		#tags:focus {
+			border-color: #3700B3;
+		}
+	</style>
+	<!-- ipfs library-->
+	<script src="https://unpkg.com/ipfs/dist/index.min.js"></script>
+
+	<!-- web3 library-->
+	<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.36/dist/web3.min.js" integrity="sha256-nWBTbvxhJgjslRyuAKJHK+XcZPlCnmIAAMixz6EefVk=" crossorigin="anonymous"></script>
+
+	<script type="text/javascript">
+		//var Buffer = require('buffer/').Buffer;
+		var abi = [{"constant":true,"inputs":[{"name":"_user","type":"address"},{"name":"_key","type":"uint256"}],"name":"getProof","outputs":[{"name":"","type":"string"},{"name":"","type":"bytes32[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_user","type":"address"},{"name":"_ipfsHash","type":"string"},{"name":"_tags","type":"bytes32[]"}],"name":"addProof","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_user","type":"address"}],"name":"getNumProofs","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}];
+
+		let ipfs, poeContract, account;
+		var buffer;
+
+		if (window.File && window.FileReader && window.FileList && window.Blob) {
+  			// All file APIs are supported
+		} else {
+			alert('The File APIs are not fully supported in this browser.');
+		}
+
+		function captureFile(evt) {
+			evt.preventDefault();
+			evt.stopPropagation();
+	    	const file = evt.target.files[0];
+	    	document.getElementById("chooseFileLabel").innerHTML = file.name;
+	    	let reader = new window.FileReader();
+	    	reader.readAsArrayBuffer(file);
+	    	reader.onloadend = () => {
+	    		buffer = ipfs.types.Buffer.from(reader.result);
+	    	}
+
+		}
+
+		var ipfsInit = () => {
+			ipfs = new Ipfs({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' });
+		}
+
+		var submit = async(evt) => {
+			let res = await ipfs.add(buffer);
+			let tags = document.getElementById("tags").value;
+			console.log(res[0].hash + " " + tags);
+			var tagArr = tags.split(",").map(str => web3.utils.asciiToHex(str.trim()));
+			console.log(tagArr);
+			poeContract.methods.addProof(res[0].hash, tagArr).send({from:account})
+				.then(() => contractInit())
+				.catch((err) => alert(err));
+
+		}
+
+		var contractInit = async() => {
+			poeContract = new web3.eth.Contract(abi, "0x98A5bDCE9Fc2F88034F3De1ed21E1D055a16Ee3B");
+			var numProofs = parseInt(await poeContract.methods.getNumProofs(account).call());
+			if(numProofs > 0) {
+				document.getElementById("userHistory").innerHTML = "";
+				var node = document.createElement("OL");
+				for(var i=0; i < numProofs; i++) {
+					var userStorageObject = await poeContract.methods.getProof(account, i).call();
+					var tagStr = userStorageObject[1].map(bytes => web3.utils.hexToAscii(bytes));
+					var li = document.createElement("LI");
+					var textNode = document.createTextNode("Tags: "+ tagStr);
+					li.innerHTML = '<a href="https://ipfs.infura.io/ipfs/'+userStorageObject[0] + '">' + userStorageObject[0] + '</a><br>';
+					li.appendChild(textNode);
+					node.appendChild(li);
+				}
+				document.getElementById("userHistory").appendChild(node);
+			}
+		}
+
+
+		var web3Init = async() => {
+			// const { currentProvider: cp } = window.web3
+			// const isToshi = !!cp.isToshi
+			// const isCipher = !!cp.isCipher
+			// const isMetaMask = !!cp.isMetaMask
+
+			if (window.ethereum) {
+				//Modern dapp browser
+				window.web3 = new Web3(ethereum);
+
+			} else if(window.web3) {
+				//legacy dapp browser
+				window.web3 = new Web3(web3.currentProvider);
+			} else {
+				//alert("Injected web3 not found, please use a web3 enabled browser like Toshi or Cipher, or install Metamask");
+				alert(web3)
+			}
+
+			
+
+			let accounts;
+			accounts = await web3.eth.getAccounts();
+			if(!!!accounts[0]) alert("Please unlock Metamask");
+			else {
+				account = accounts[0];
+				document.getElementById("listAccount").innerHTML = 'User History <br><p style="font-size:13px">account: ' + account;
+			}
+			contractInit();
+		}
+	</script>
+	<script type="text/javascript">
+
+	</script>
+	<title>Test</title>
+</head>
+<body id="body" onload="ipfsInit(); web3Init();">
+	<h2>Welcome to my Proof of Existence dapp!</h2>
+	<h5>Author: Kartik Shah (@krtk6160)</h5>
+	<div class="flex-container">
+		<table cellpadding="20px" cellspacing="10px">
+			<tr>
+				<th>Upload proof (timestamped image/video file)</th>
+				<th id="listAccount">User History</th>
+			</tr>
+			<tr>
+				<td>
+				
+ 						<input id="file" type="file" accept="image/*" capture="camera" onchange="captureFile(event)" class="fileInput">
+ 						<label id="chooseFileLabel" for="file">Choose a file</label><br><br><br>
+ 						
+
+ 						<input type="text" name="tags" id="tags" placeholder="Enter tags separated by a comma">
+						<br><br>
+ 						<button type="button" class="btn" onclick="submit(event)">Upload</button>
+ 				
+				</td>
+				<td>
+					<div id="historyContainer">
+ 						<div id="userHistory" style="line-height: 30px"></div>
+ 						<div id="listAccount"></div>
+ 					</div>
+				</td>
+			</tr>
+		</table>
+ 	</div>
+</body>
+</html>
