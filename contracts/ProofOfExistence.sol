@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.0;
 import "./Ownable.sol";
 
 contract ProofOfExistence is Ownable {
@@ -15,7 +15,11 @@ contract ProofOfExistence is Ownable {
 	}
 
 	//maps address of user to a userStorage struct
-	mapping(address => userStorage) userToProofs; 
+	mapping(address => userStorage) private userToProofs; 
+
+	function() external payable {
+		revert();
+	}
 
 	//
 	function addProof(string memory _ipfsHash, bytes32[] memory _tags) public {
