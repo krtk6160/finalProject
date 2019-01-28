@@ -1,0 +1,2 @@
+The contract in this project doesn't transfer (accept or give out) ether, doesn't have external functions, doesn't make external function calls, and doesn't interact with other smart contracts.
+For this reason, most of the common attacks on Solidity smart contracts are not possible here.
